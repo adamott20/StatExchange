@@ -1,6 +1,6 @@
 baseurl = "/"
 languageCode = "en-us"
-title = "A Hugo website"
+title = "StatExchange"
 theme = "hugo-lithium"
 googleAnalytics = ""
 disqusShortname = ""
@@ -32,7 +32,7 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
     MathJaxVersion = "2.7.5"
 
     # path to the favicon, under "static"
-    favicon = "favicon.ico"
+    favicon = "SE_Logo.png"
 
     [params.logo]
     url = "Main_Logo.png"

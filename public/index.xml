@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>A Hugo website</title>
+    <title>StatExchange</title>
     <link>/</link>
-    <description>Recent content on A Hugo website</description>
+    <description>Recent content on StatExchange</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Thu, 05 May 2016 21:48:51 -0700</lastBuildDate>
@@ -27,7 +27,8 @@
       <pubDate>Thu, 05 May 2016 21:48:51 -0700</pubDate>
       
       <guid>/about/</guid>
-      <description>This is a &amp;ldquo;hello world&amp;rdquo; example website for the blogdown package. The theme was forked from @jrutheiser/hugo-lithium-theme and modified by Yihui Xie.</description>
+      <description>StatExchange was started by five Brigham Young University statistics students as a side project to document what we do now and onward. The views expressed in this blog do not represent the views of Brigham Young University.
+The theme for this blog was forked from @jrutheiser/hugo-lithium-theme, previously modified by Yihui Xie and modified again by the contributors of this blog.</description>
     </item>
     
     <item>
