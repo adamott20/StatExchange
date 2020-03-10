@@ -5,12 +5,6 @@ date: "3/5/2020"
 output: html_document
 ---
 
-```{r add.logo, echo=FALSE}
-htmltools::img(src = knitr::image_uri("Main_Logo.png"), 
-               alt = 'logo', 
-               style = 'position:absolute; top:0; right:0; padding:10px;height:125px')
-```
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 set.seed(6)
