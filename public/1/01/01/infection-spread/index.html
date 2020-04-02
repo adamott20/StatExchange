@@ -94,7 +94,6 @@ start.directions &lt;- runif(nobs,0,360)</code></pre>
                                          levels = c(&quot;Infected&quot;, &quot;Susceptible&quot;, &quot;Recovered&quot;, &quot;Dead&quot;)), 
                          timeSinceInfect = c(1,rep(0,nobs-1)), time = 1)</code></pre>
 <p>These locations and the directions can be displayed in a plot. I used the <code>ggplot2</code> and <code>gganimate</code> libraries for these simulations. The speed is multiplied by <span class="math inline">\(10\)</span>, so that it is shown how far an observation will move after <span class="math inline">\(10\)</span> frames, so that the direction is more clear. The observations are randomly assigned a starting place, direction, and speed.</p>
-<p><img src="No_Restrictions.gif" /></p>
 <pre class="r"><code>ggplot(start.patients, aes(x = x, y = y, 
                            xend = x + 10 * speed * xdir,
                            yend = y + 10 * speed * ydir, 
@@ -324,10 +323,8 @@ full_infect$status &lt;- factor(full_infect$status, levels = c(&quot;Infected&qu
 
 anim &lt;- animate(p, width = 800, height = 450)
 magick::image_write(anim, &quot;No_Restrictions.gif&quot;)</code></pre>
-<div class="figure">
-<img src="No_Restrictions.gif" alt="Gif of infection with no restrictions" />
-<p class="caption">Gif of infection with no restrictions</p>
-</div>
+<p><img src="https://media.giphy.com/media/h7WpsrvdGx1h2T60v0/giphy.gif" />
+<img src="No_Restrictions.gif" alt="Gif of infection with no restrictions" /></p>
 <p>The movement can be summarized into a single plot that shows the population composition over time.</p>
 <p><img src="/post/CasonPosts/Coronavirus/Infection-Spread_files/figure-html/curveNoRestrictions-1.png" width="768" /></p>
 <details>
@@ -348,6 +345,7 @@ magick::image_write(anim, &quot;No_Restrictions.gif&quot;)</code></pre>
 new.speeds &lt;- c(start.patients$speed[1], ifelse(sapply(2:nobs,function(x) rbinom(1,1,.85)==1),0,start.patients$speed[-1]))
 no.move.start.patients$speed &lt;- new.speeds</code></pre>
 <p>From here, the simulation is repeated exactly the same as above, but starting with <code>no.move.start.patients</code> instead of <code>start.patients</code>.</p>
+<p><img src="https://media.giphy.com/media/l4Y9UdZ72MXZpePuwQ/giphy.gif" /></p>
 <div class="figure">
 <img src="Less_Movement.gif" alt="Gif of infection with limited movement" />
 <p class="caption">Gif of infection with limited movement</p>
@@ -543,6 +541,7 @@ neighbors &lt;- neighbors[which(prev.data$quadrant[-i][neighbors] == prev.data$q
 }</code></pre>
 </details>
 <p>With the updated movement function, the graphics can show the movement and transitions of the simulated people.</p>
+<p><img src="https://media.giphy.com/media/XAaOhvQAmiJVGKCNsd/giphy.gif" /></p>
 <div class="figure">
 <img src="With_Barrier.gif" alt="Gif of infection with barrier" />
 <p class="caption">Gif of infection with barrier</p>
@@ -558,6 +557,7 @@ neighbors &lt;- neighbors[which(prev.data$quadrant[-i][neighbors] == prev.data$q
 new.speeds &lt;- c(start.patients$speed[1], ifelse(sapply(2:nobs,function(x) rbinom(1,1,.85)==1),0,start.patients$speed[-1]))
 no.move.start.patients$speed &lt;- new.speeds</code></pre>
 <p>There are no other changes, and the rest of the simulation is run as before, but with the <code>movement.withBarriers</code> function. Because this simulation requires more than double the time of the unrestricted simulation, the rendering time is extremely long. It took my laptop nearly <span class="math inline">\(10\)</span> hours to complete.</p>
+<p><img src="https://media.giphy.com/media/WnD2IxaWAusB8Yw9II/giphy.gif" /></p>
 <div class="figure">
 <img src="With_Barrier.less.move.gif" alt="Gif of infection with barrier and limited movement" />
 <p class="caption">Gif of infection with barrier and limited movement</p>

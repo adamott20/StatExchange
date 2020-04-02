@@ -1,8 +1,9 @@
 ---
 title: "Infection Spread"
 author: "Cason Wight"
-date: "4/2/2020"
-output: html_document
+date: 2020-04-02T21:13:14-05:00
+categories: ["R"]
+tags: ["R Markdown", "plot", "gganimate"]
 ---
 
 2020 has been a wild year. COVID 19 has everyone reeling, trying to figure out what this means for us. So many conversations and initiatives surround the idea of trying to "flatten the curve." Some obsessively check the CDC update of the number of cases in their home country or use percents of those infected to convince themselves this isn't that bad. 
@@ -46,7 +47,6 @@ start.patients <- data.frame(obs = 1:nobs,
 
 These locations and the directions can be displayed in a plot. I used the `ggplot2` and `gganimate` libraries for these simulations. The speed is multiplied by $10$, so that it is shown how far an observation will move after $10$ frames, so that the direction is more clear. The observations are randomly assigned a starting place, direction, and speed.
 
-![](No_Restrictions.gif)
 
 ```{r gapminder, fig.show='animate', ffmpeg.format='gif', dev='jpeg'}
 ggplot(start.patients, aes(x = x, y = y, 
@@ -313,6 +313,8 @@ anim <- animate(p, width = 800, height = 450)
 magick::image_write(anim, "No_Restrictions.gif")
 ```
 
+
+![Gif of infection with no restrictions](https://media.giphy.com/media/h7WpsrvdGx1h2T60v0/giphy.gif)
 ![Gif of infection with no restrictions](No_Restrictions.gif)
 
 The movement can be summarized into a single plot that shows the population composition over time.
@@ -380,6 +382,8 @@ p <- ggplot(full_infect, aes(x = x, y = y, color = status)) +
 anim <- animate(p, width = 800, height = 450)
 magick::image_write(anim, "Less_Movement.gif")
 ```
+
+![Gif of infection with limited movement](https://media.giphy.com/media/l4Y9UdZ72MXZpePuwQ/giphy.gif)
 
 ![Gif of infection with limited movement](Less_Movement.gif)
 
@@ -654,6 +658,8 @@ anim <- animate(p, width = 800, height = 450)
 magick::image_write(anim, "With_Barrier.gif")
 ```
 
+![](https://media.giphy.com/media/XAaOhvQAmiJVGKCNsd/giphy.gif)
+
 ![Gif of infection with barrier](With_Barrier.gif)
 
 ```{r curveWithBarrier, fig.width = 8, fig.height = 3, echo = FALSE}
@@ -708,6 +714,8 @@ p <- ggplot(full_infect, aes(x = x, y = y, color = status, label = obs)) +
 anim <- animate(p, width = 800, height = 450)
 magick::image_write(anim, "With_Barrier.less.move.gif")
 ```
+
+![](https://media.giphy.com/media/WnD2IxaWAusB8Yw9II/giphy.gif)
 
 ![Gif of infection with barrier and limited movement](With_Barrier.less.move.gif)
 
