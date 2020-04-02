@@ -94,6 +94,7 @@ start.directions &lt;- runif(nobs,0,360)</code></pre>
                                          levels = c(&quot;Infected&quot;, &quot;Susceptible&quot;, &quot;Recovered&quot;, &quot;Dead&quot;)), 
                          timeSinceInfect = c(1,rep(0,nobs-1)), time = 1)</code></pre>
 <p>These locations and the directions can be displayed in a plot. I used the <code>ggplot2</code> and <code>gganimate</code> libraries for these simulations. The speed is multiplied by <span class="math inline">\(10\)</span>, so that it is shown how far an observation will move after <span class="math inline">\(10\)</span> frames, so that the direction is more clear. The observations are randomly assigned a starting place, direction, and speed.</p>
+<p><img src="No_Restrictions.gif" /></p>
 <pre class="r"><code>ggplot(start.patients, aes(x = x, y = y, 
                            xend = x + 10 * speed * xdir,
                            yend = y + 10 * speed * ydir, 
