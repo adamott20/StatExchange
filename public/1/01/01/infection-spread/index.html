@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.66.0" />
+
+
+<title>Infection Spread - StatExchange</title>
+<meta property="og:title" content="Infection Spread - StatExchange">
+
+
+  <link href='/SE_Logo.png' rel='icon' type='image/x-icon'/>
+
+
+
+  
+
+
+
+
+
+
+
+
+<link href='//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/Main_Logo.png"
+         width="50"
+         height="50"
+         alt="Logo">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/rstudio/blogdown">GitHub</a></li>
+    
+    <li><a href="https://twitter.com/rstudio">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">17 min read</span>
+    
+
+    <h1 class="article-title">Infection Spread</h1>
+
+    
+    <span class="article-date">0001-01-01</span>
+    
+
+    <div class="article-content">
+      
+
+
+<p>2020 has been a wild year. COVID 19 has everyone reeling, trying to figure out what this means for us. So many conversations and initiatives surround the idea of trying to “flatten the curve.” Some obsessively check the CDC update of the number of cases in their home country or use percents of those infected to convince themselves this isn’t that bad.</p>
+<p>I am no expert on infections, but I also have been thinking about the impact of COVID 19 recently. I tend to gravitate to numbers or graphics when there is so much we don’t know. As Coronavirus has become the topic of most discussions recently, I have seen simulations of how the virus spreads. Examples of simulations I have seen are from the <a href="https://www.washingtonpost.com/graphics/2020/world/corona-simulator/">Washington Post</a> or <a href="https://i.imgur.com/adhdxYM.gifv">this graphic</a> on imgur.com. These graphics show a very clear reason for why we should stay aside, stop moving, or take other <em>social distancing</em> measures. I thought it would be intersting to replicate this type of simulation myself in <code>R</code>.</p>
+<p>In this post, I will show how to create similar simulations. Hopefully, anyone who wants to create a similar study or change the simulation can use this as a resource to do so. In my simulations, I will demonstrate 1) an infection with no infection control, 2) an infection with <span class="math inline">\(85\%\)</span> of the population not moving, 3) an infection with a barrier around an infected subpopulation, 4) an infection with both methods of infection control. The population not moving is representative of individual isolation efforts and the barrier is representative of transnational travel restrictions.</p>
+<div id="initial-population" class="section level2">
+<h2>Initial Population</h2>
+<p>The first step for these simulations is defining the initial population. I will simulate <span class="math inline">\(200\)</span> observations and allow them to move within a <span class="math inline">\(1\times1\)</span> block. I want the observaitions to move in random directions, at random speeds. If an infected observation gets too close to a sesceptible one, the infection is spread. I also want the possiblity of death for elderly, infected observations that is dependent on the current number infected. This way I can assess death toll under the different methods.</p>
+<pre class="r"><code>nobs &lt;- 200
+start.directions &lt;- runif(nobs,0,360)</code></pre>
+<p>The directions are randomly selected in degrees, and the <span class="math inline">\(x\)</span>/<span class="math inline">\(y\)</span> directions are calculated using this number. In the code defining the initial data frame, the <span class="math inline">\(200\)</span> observations each have a random <span class="math inline">\((x,y)\)</span> starting coordinates, the direction in <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span> (calculated from the sampled angles), the speed of movement (sampled uniformly between <span class="math inline">\(.0025\)</span> and <span class="math inline">\(.005\)</span>), the age (old or young, sampled at <span class="math inline">\(15\%\)</span> old), the current infected status (the first observation infected and the rest susceptible), and the time since infection (<span class="math inline">\(1\)</span> for the first and <span class="math inline">\(0\)</span> for the rest).</p>
+<pre class="r"><code>start.patients &lt;- data.frame(obs = 1:nobs,
+                         x = runif(nobs), y = runif(nobs), 
+                         xdir = cos(start.directions * pi / 180), 
+                         ydir = sin(start.directions * pi / 180), 
+                         speed = runif(nobs, .0025, .005), 
+                         Age = sample(c(&quot;Young&quot;, &quot;Old&quot;), nobs, replace = TRUE, prob = c(.85,.15)), 
+                         status = factor(c(&quot;Infected&quot;, rep(&quot;Susceptible&quot;,199)), 
+                                         levels = c(&quot;Infected&quot;, &quot;Susceptible&quot;, &quot;Recovered&quot;, &quot;Dead&quot;)), 
+                         timeSinceInfect = c(1,rep(0,nobs-1)), time = 1)</code></pre>
+<p>These locations and the directions can be displayed in a plot. I used the <code>ggplot2</code> and <code>gganimate</code> libraries for these simulations. The speed is multiplied by <span class="math inline">\(10\)</span>, so that it is shown how far an observation will move after <span class="math inline">\(10\)</span> frames, so that the direction is more clear. The observations are randomly assigned a starting place, direction, and speed.</p>
+<p><img src="/post/CasonPosts/Coronavirus/Infection-Spread_files/figure-html/start.plot-1.png" width="672" /></p>
+<details>
+<p><summary>Code for above plot</summary></p>
+<pre class="r"><code>ggplot(start.patients, aes(x = x, y = y, 
+                           xend = x + 10 * speed * xdir,
+                           yend = y + 10 * speed * ydir, 
+                           shape = Age, color = status)) +
+  geom_point() + 
+  geom_segment(arrow = arrow(length=unit(0.10,&quot;cm&quot;), type = &quot;closed&quot;)) + 
+  theme(panel.grid = element_blank(), axis.text = element_blank()) +
+  ggtitle(&quot;Patient Movement&quot;) +
+  xlab(NULL) +
+  ylab(NULL)</code></pre>
+</details>
+<p>With the starting population defined, now I will simulate movement, infection spread, recovery, and death.</p>
+</div>
+<div id="simulation-with-no-infection-control" class="section level2">
+<h2>Simulation with No infection Control</h2>
+<p>There are many different pieces involved with this simulation; I will start by outlining the different pieces of a function that takes a population and moves it to the next time period. This function will be called <code>movement.noRestrictions</code>, and takes as an input <code>prev.data</code>, or the dataframe of the observations in the previous point in time.</p>
+<div id="movement" class="section level3">
+<h3>Movement</h3>
+<p>The first piece of this function is determining the updated position and direction of the observations, or people. For each person, the idea is that their new position will be the old <span class="math inline">\((x,y)\)</span> coordinates, plus the <span class="math inline">\((x,y)\)</span> direction multiplied by the speed. If this new position would be outside of the box, then they need to “bounce”. If the person is dead, there is no movement, direction, or speed.</p>
+<pre class="r"><code>if(prev.data$status[i] == &quot;Dead&quot;) {
+      new.x[i] &lt;- prev.data$x[i]
+      new.xdir[i] &lt;- 0
+      new.y[i] &lt;- prev.data$y[i]
+      new.ydir[i] &lt;- 0
+      prev.data$speed[i] &lt;- 0
+}</code></pre>
+<p>If the updated direction would put it past the wall on the right or left, the new position must put it back inside the box. The new position would put it inside the box by however far outside the box it would have reached, had there been no wall. In this case, the new <span class="math inline">\(x\)</span> direction becomes the negative of the previous <span class="math inline">\(x\)</span> direction.</p>
+<pre class="r"><code>else if(prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i] &gt; 1) {
+  new.x[i] &lt;- 1 - (prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i] - 1)
+  new.xdir[i] &lt;- -prev.data$xdir[i]
+      
+} else if(prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i] &lt; 0) {
+    new.x[i] &lt;- -(prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i])
+    new.xdir[i] &lt;- -prev.data$xdir[i]
+}</code></pre>
+<p>If there would be no bounce, the new coordinates are simple and the direction remains unchanged.</p>
+<pre class="r"><code>else{
+  new.x[i] &lt;- prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i]
+  new.xdir[i] &lt;- prev.data$xdir[i]
+}</code></pre>
+The same concept is applied to the <span class="math inline">\(y\)</span> direction.
+<details>
+<p><summary>Code for <span class="math inline">\(y\)</span> direction movement</summary></p>
+<pre class="r"><code>if(prev.data$y[i] + prev.data$speed[i] * prev.data$ydir[i] &gt; 1) {
+  new.y[i] &lt;- 1 - (prev.data$y[i] + prev.data$speed[i] * prev.data$ydir[i] - 1)
+  new.ydir[i] &lt;- -prev.data$ydir[i]
+
+} else if(prev.data$y[i] + prev.data$speed[i] * prev.data$ydir[i] &lt; 0) {
+  new.y[i] &lt;- -(prev.data$y[i] + prev.data$speed[i] * prev.data$ydir[i])
+  new.ydir[i] &lt;- -prev.data$ydir[i]
+  
+} else{
+  new.y[i] &lt;- prev.data$y[i] + prev.data$speed[i] * prev.data$ydir[i]
+  new.ydir[i] &lt;- prev.data$ydir[i]
+}</code></pre>
+</details>
+</div>
+<div id="infection-status" class="section level3">
+<h3>Infection Status</h3>
+<p>The next detail of the simulation is the spread of the infection and status of the people. The updated status of each person is assumed to remain unchanged, unless any of a few conditions are met. The first, is that if a person has been infected for more than <span class="math inline">\(160\)</span> time periods, that person recovers. Next, if any of the <em>neighbors</em> of a susceptible person are infected, that person will become infected. A neighbor is defined by any other person that is within <span class="math inline">\(.05\)</span>, defined by the equation <span class="math inline">\(\sqrt{(x_{person}-x_{other})^2+(y_{person}-y_{other})^2}\le.05\)</span>. Lastly, if a person is old and infected, that person has a chance of dying. I will make this chance <span class="math inline">\(p\)</span> dependent on how many people are currently infected <span class="math inline">\(n\)</span>, defined by the simple function <span class="math inline">\(p=\frac{n}{200}*.05\)</span>.</p>
+<p>Thus the status of each person is defined by the following code.</p>
+<pre class="r"><code>new.status[i] &lt;- as.character(prev.data$status[i])
+
+neighbors &lt;- prev.data$obs[-i][(sqrt((new.y[-i]-new.y[i])^2 + (new.x[-i]-new.x[i])^2) &lt; .05)]
+
+if(prev.data$timeSinceInfect[i] &gt; 160) {
+  new.status[i] &lt;- &quot;Recovered&quot;
+  
+} else if(&quot;Infected&quot; %in% prev.data$status[neighbors] &amp; prev.data$status[i] == &quot;Susceptible&quot;) {
+  new.status[i] &lt;- &quot;Infected&quot;
+
+} else if(new.status[i] == &quot;Infected&quot; &amp; prev.data$Age[i] == &quot;Old&quot;) {
+  perc.infected &lt;- mean(prev.data$status == &quot;Infected&quot;)
+  new.status[i] &lt;- sample(c(&quot;Infected&quot;, &quot;Dead&quot;), 1, prob = c(1-perc.infected*.05,perc.infected*.05))
+}</code></pre>
+<p>The last steps for the <code>movement.noRestrictions</code> function are updating the time since contraction for each infected person and outputing a dataframe with the updated values. The output of this function will be read in as an input for each change in time.</p>
+<details>
+<p><summary>Full code for the <code>movement.noRestrictions</code> function</summary></p>
+<pre class="r"><code>movement.noRestrictions &lt;- function(prev.data){
+  new.x &lt;- c()
+  new.xdir &lt;- c()
+  new.y &lt;- c()
+  new.ydir &lt;- c()
+  new.status &lt;- c()
+  new.timeSinceInfect &lt;- c()
+  
+  for(i in 1:nobs){
+    ### Locations and Directions
+    
+    # If the person is dead, they no longer move
+    if(prev.data$status[i] == &quot;Dead&quot;) {
+      new.x[i] &lt;- prev.data$x[i]
+      new.xdir[i] &lt;- 0
+      new.y[i] &lt;- prev.data$y[i]
+      new.ydir[i] &lt;- 0
+      prev.data$speed[i] &lt;- 0
+      
+    # If it bounces off the right wall,
+    } else if(prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i] &gt; 1) {
+      # Then the new X position is 1 - (how far past 1 it would have gone without the wall)
+      new.x[i] &lt;- 1 - (prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i] - 1)
+      # and the new X direction is opposite
+      new.xdir[i] &lt;- -prev.data$xdir[i]
+      
+    # Else if it bounces off the left wall
+    } else if(prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i] &lt; 0) {
+      new.x[i] &lt;- -(prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i])
+      new.xdir[i] &lt;- -prev.data$xdir[i]
+      
+    # Otherwise, the new position is within the bounds
+    } else{
+      # Then the new X position is the previous plus the movement in that direction
+      new.x[i] &lt;- prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i]
+      # and the new X direction is unchanged
+      new.xdir[i] &lt;- prev.data$xdir[i]
+      }
+    
+    if(prev.data$status[i] == &quot;Dead&quot;) {
+      new.x[i] &lt;- prev.data$x[i]
+      new.xdir[i] &lt;- 0
+      new.y[i] &lt;- prev.data$y[i]
+      new.ydir[i] &lt;- 0
+      prev.data$speed[i] &lt;- 0
+      
+    # If it bounces off the ceiling,
+    } else if(prev.data$y[i] + prev.data$speed[i] * prev.data$ydir[i] &gt; 1) {
+      new.y[i] &lt;- 1 - (prev.data$y[i] + prev.data$speed[i] * prev.data$ydir[i] - 1)
+      new.ydir[i] &lt;- -prev.data$ydir[i]
+    
+    # Bounces off the floor
+    } else if(prev.data$y[i] + prev.data$speed[i] * prev.data$ydir[i] &lt; 0) {
+      new.y[i] &lt;- -(prev.data$y[i] + prev.data$speed[i] * prev.data$ydir[i])
+      new.ydir[i] &lt;- -prev.data$ydir[i]
+      
+    # Does not bounce off ceiling nor floor
+    } else{
+      new.y[i] &lt;- prev.data$y[i] + prev.data$speed[i] * prev.data$ydir[i]
+      new.ydir[i] &lt;- prev.data$ydir[i]
+    }
+  }
+  
+  for(i in 1:nobs){
+    ### Status Changes
+    
+    # Continue with previous status
+    new.status[i] &lt;- as.character(prev.data$status[i])
+    
+    # Determine which other observations are the neighbors
+    neighbors &lt;- prev.data$obs[-i][(sqrt((new.y[-i]-new.y[i])^2 + (new.x[-i]-new.x[i])^2) &lt; .05)]
+    
+    # If the subject has been infected for over 160, they recover
+    if(prev.data$timeSinceInfect[i] &gt; 160) {
+      new.status[i] &lt;- &quot;Recovered&quot;
+      
+    # If the subject is susceptible, and at least one neighbor is infected, then the subject is as well
+    } else if(&quot;Infected&quot; %in% prev.data$status[neighbors] &amp; prev.data$status[i] == &quot;Susceptible&quot;) {
+      new.status[i] &lt;- &quot;Infected&quot;
+    
+    # If the subject is infected and old, then the subject has a chance of becoming dead
+    } else if(new.status[i] == &quot;Infected&quot; &amp; prev.data$Age[i] == &quot;Old&quot;) {
+      perc.infected &lt;- mean(prev.data$status == &quot;Infected&quot;)
+      new.status[i] &lt;- sample(c(&quot;Infected&quot;, &quot;Dead&quot;), 1, prob = c(1-perc.infected*.05,perc.infected*.05))
+    }
+    
+    # If infected, the infection timer increases
+    if(new.status[i] == &quot;Infected&quot;) {
+      new.timeSinceInfect[i] &lt;- prev.data$timeSinceInfect[i] + 1
+    } else {
+      new.timeSinceInfect[i] &lt;- 0
+    }
+  }
+  
+  # Relevel Status
+  new.status &lt;- factor(new.status, levels = c(&quot;Infected&quot;, &quot;Susceptible&quot;, &quot;Recovered&quot;, &quot;Dead&quot;))
+  
+  # Output dataframe after one time of movement
+  data.frame(obs = 1:nobs, x = new.x, y = new.y, 
+             xdir = new.xdir, ydir = new.ydir, 
+             speed = prev.data$speed, 
+             Age = prev.data$Age, status = new.status, 
+             timeSinceInfect = new.timeSinceInfect, 
+             time = prev.data$time + 1)
+}</code></pre>
+</details>
+</div>
+<div id="full-simulated-data" class="section level3">
+<h3>Full Simulated Data</h3>
+<p>I will make <span class="math inline">\(400\)</span> frames, or times, in this simulation. For the other simulations, by trial and error I found times when the infection was done spreading. The initial age, directions, positions, and speeds are already defined by <code>start.patients</code>. For each of the <span class="math inline">\(400\)</span> times, movement is simulated using <code>movement.noRestrictions</code>. Each update is saved into a new element in a list, and then collapsed into a single dataframe using <code>bind_rows</code>.</p>
+<pre class="r"><code>time1 &lt;- 400
+times &lt;- 1:time1
+infect.data &lt;- list()
+
+infect.data[[1]] &lt;- start.patients
+
+for(time in times[-1]){
+  infect.data[[time]] &lt;- movement.noRestrictions(infect.data[[time - 1]])
+}
+
+full_infect &lt;- bind_rows(infect.data)
+full_infect$status &lt;- factor(full_infect$status, levels = c(&quot;Infected&quot;, &quot;Susceptible&quot;, &quot;Recovered&quot;, &quot;Dead&quot;))</code></pre>
+<p>Using <code>gganimate</code>, a gif of the movement and status for each person is shown. The <code>magick</code> library is able to save the gif as a shareable file. In R Markdown, the option <code>fig.show='animate'</code> is included in the chunk options to display the gif. If not knitting in R Markdown, the gif will be displayed in the Viewer of Rstudio. The <code>magick::image_write</code> function writes the gif to a saved file as well. The gif may take a few minutes to render. I have found that with more frames in the gif, the rendering time increases exponentially.</p>
+<pre class="r"><code>p &lt;- ggplot(full_infect, aes(x = x, y = y, color = status)) +
+  geom_point(aes(shape=Age)) +
+  transition_time(time) +
+  ggtitle(paste(&quot;Time: {round(frame_time,0)}&quot;)) +
+  theme(panel.grid = element_blank(),
+        axis.text = element_blank()) + 
+  geom_segment(aes(x = rep(c(0,0,0,1),time1*nobs/4), xend = rep(c(1,1,0,1),time1*nobs/4), 
+                   y = rep(c(0,1,0,0),time1*nobs/4), yend = rep(c(0,1,1,1),time1*nobs/4)),
+               color = &quot;black&quot;)
+
+anim &lt;- animate(p, width = 800, height = 450)
+magick::image_write(anim, &quot;No_Restrictions.gif&quot;)</code></pre>
+<div class="figure">
+<img src="No_Restrictions.gif" alt="Gif of infection with no restrictions" />
+<p class="caption">Gif of infection with no restrictions</p>
+</div>
+<p>The movement can be summarized into a single plot that shows the population composition over time.</p>
+<p><img src="/post/CasonPosts/Coronavirus/Infection-Spread_files/figure-html/curveNoRestrictions-1.png" width="768" /></p>
+<details>
+<p><summary>Code for above plot</summary></p>
+<pre class="r"><code>full_infect %&gt;%
+  group_by(time, status) %&gt;%
+  dplyr::summarize(number = dplyr::n()) %&gt;%
+  ggplot(aes(x = time, y = number/nobs, fill = status)) + 
+  geom_bar(stat=&quot;identity&quot;, width = 1) + 
+  labs(title = &quot;Population &quot;, x = &quot;Time&quot;, y = &quot;Percent of Population&quot;)</code></pre>
+</details>
+</div>
+</div>
+<div id="simulation-with-less-movement" class="section level2">
+<h2>Simulation with Less Movement</h2>
+<p>The same process as above is simulated, but with roughly <span class="math inline">\(85\%\)</span> of the population not moving. I will assume that the infected individual is still moving. Instead of making significant changes to the previous simulation, I will simply take the <code>start.patients</code> dataframe, and give <span class="math inline">\(0\)</span> for <span class="math inline">\(85\%\)</span> of the values in the <code>speed</code> column.</p>
+<pre class="r"><code>no.move.start.patients &lt;- start.patients
+new.speeds &lt;- c(start.patients$speed[1], ifelse(sapply(2:nobs,function(x) rbinom(1,1,.85)==1),0,start.patients$speed[-1]))
+no.move.start.patients$speed &lt;- new.speeds</code></pre>
+<p>From here, the simulation is repeated exactly the same as above, but starting with <code>no.move.start.patients</code> instead of <code>start.patients</code>.</p>
+<div class="figure">
+<img src="Less_Movement.gif" alt="Gif of infection with limited movement" />
+<p class="caption">Gif of infection with limited movement</p>
+</div>
+<p><img src="/post/CasonPosts/Coronavirus/Infection-Spread_files/figure-html/curveNoMove-1.png" width="768" /></p>
+</div>
+<div id="simulation-with-barriers" class="section level2">
+<h2>Simulation with Barriers</h2>
+<p>Simulating with a barrier is a more complicated social distancing method to simulate than less movement. The <code>movement.noRestrictions</code> function will need some changes in order to work. The updated movement function will be called <code>movement.withBarriers</code>. The barrier I am imagining is a vertical wall dividing about <span class="math inline">\(1/4\)</span> of the space, with a small opening in the middle to allow for limited movement across the barrier. This type of simulation is similar to infection spread with travel restrictions or quarantines. This boundary can be seen in the plot below.</p>
+<p><img src="/post/CasonPosts/Coronavirus/Infection-Spread_files/figure-html/start.plot.barrier-1.png" width="672" /></p>
+<details>
+<p><summary>Code for above plot</summary></p>
+<pre class="r"><code>ggplot() + 
+   geom_segment(aes(x = rep(c(.25,.25,0,1,0,0,0,0,0,0),20), xend = rep(c(.25,.25,0,1,1,1,1,1,1,1),20), 
+                   y = rep(c(0,1,0,0,0,1,1,1,1,1),20), yend = rep(c(.4375,.5625,1,1,0,1,1,1,1,1),20)), color = &quot;black&quot;) +
+  theme(panel.grid = element_blank(),
+        axis.text = element_blank()) + 
+  labs(title = &quot;Patient Movement&quot;, x = NULL, y = NULL)</code></pre>
+</details>
+<p>Instead of handling movement as before, the movement needs to be redefined. The <span class="math inline">\(x\)</span> location of the starting infected person will be sampled in the walled off region. For reasons that will be later explained, the quadrant (either within the walls or not) is also assigned for each person.</p>
+<pre class="r"><code>start.patients$x[1] &lt;- runif(1,0,.25)
+start.patients$quadrant &lt;- ifelse(start.patients$x &lt; .25, 1, 2)</code></pre>
+<p><img src="/post/CasonPosts/Coronavirus/Infection-Spread_files/figure-html/start.plot.barrier.move-1.png" width="672" /></p>
+<div id="movement-1" class="section level3">
+<h3>Movement</h3>
+<p>The other piece that needs to be changed from before is the bounces off these walls. The updated <code>movement.withBarriers</code> function will include the following conditions for the movements in <span class="math inline">\(x\)</span> before the outer wall bouncing conditions to fix for the new walls. First, for a “bounce” to occur on the wall, the person would have to cross the <span class="math inline">\(x=.25\)</span> line. If a person does cross this line, I calculate the <span class="math inline">\(y\)</span> coordinate at the point at which the <span class="math inline">\(x=.25\)</span>. If the <span class="math inline">\(y\)</span> coordinate is outside of the gap area, then there is a bounce. This bounce is calculated as with the outer walls. Otherwise, the person moves normally.</p>
+<pre class="r"><code>else if((prev.data$x[i] - .25) * ((prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i]) - .25) &lt; 0) {
+  if(prev.data$x[i] &lt; .25){
+    y.at.imp &lt;- prev.data$y[i] + 
+      prev.data$speed[i] * prev.data$ydir[i] * 
+        (.25 - prev.data$x[i]) / (prev.data$speed[i] * prev.data$xdir[i])
+  } else{
+    y.at.imp &lt;- prev.data$y[i] + 
+      prev.data$speed[i] * prev.data$ydir[i] * 
+        (prev.data$x[i] - .25) / (prev.data$speed[i] * prev.data$xdir[i])
+  }
+  
+  if(!((y.at.imp &gt; .4375) &amp; (y.at.imp &lt; .5625))){
+    if(prev.data$x[i] &lt; .25){
+      new.x[i] &lt;- .25 - 
+        (prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i] - .25)
+    } else{
+      new.x[i] &lt;- .25 + 
+        (.25 - prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i] - .25)
+    }
+    
+    new.xdir[i] &lt;- -prev.data$xdir[i]
+  }
+}</code></pre>
+</div>
+<div id="infection-status-1" class="section level3">
+<h3>Infection Status</h3>
+<p>Another change that needs to be made is that infections should not spread across the wall, so I will fix that by indicating whether or not the data are within the walls (columns marked <code>quadrant</code>), which is updated with the same function as initially used, in each movement. Thus now neighbors have to be within <span class="math inline">\(.05\)</span> and they have to be in the same <code>quadrant</code>. Even though this means that points on opposing sides of the gap area cannot spread the infection, this is a minor detail and may actually replicate transnational travel.</p>
+<pre class="r"><code>neighbors &lt;- prev.data$obs[-i][(sqrt((new.y[-i]-new.y[i])^2 + (new.x[-i]-new.x[i])^2) &lt; .05)]
+neighbors &lt;- neighbors[which(prev.data$quadrant[-i][neighbors] == prev.data$quadrant[i])]</code></pre>
+<details>
+<p><summary>Full code for the <code>movement.withBarriers</code> function</summary></p>
+<pre class="r"><code>movement.withBarrier &lt;- function(prev.data){
+  new.x &lt;- c()
+  new.xdir &lt;- c()
+  new.y &lt;- c()
+  new.ydir &lt;- c()
+  new.status &lt;- c()
+  new.timeSinceInfect &lt;- c()
+  
+  for(i in 1:nobs){
+    ### Locations and Directions
+    
+    # If the person is dead, they no longer move
+    if(prev.data$status[i] == &quot;Dead&quot;) {
+      new.x[i] &lt;- prev.data$x[i]
+      new.xdir[i] &lt;- 0
+      new.y[i] &lt;- prev.data$y[i]
+      new.ydir[i] &lt;- 0
+      prev.data$speed[i] &lt;- 0
+      
+    # If it bounces off the mid walls,
+    } else if((prev.data$x[i] - .25) * ((prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i]) - .25) &lt; 0) {
+      if(prev.data$x[i] &lt; .25){
+        y.at.imp &lt;- prev.data$y[i] + 
+          prev.data$speed[i] * prev.data$ydir[i] * 
+            (.25 - prev.data$x[i]) / (prev.data$speed[i] * prev.data$xdir[i])
+      } else{
+        y.at.imp &lt;- prev.data$y[i] + 
+          prev.data$speed[i] * prev.data$ydir[i] * 
+            (prev.data$x[i] - .25) / (prev.data$speed[i] * prev.data$xdir[i])
+      }
+      
+      if(!((y.at.imp &gt; .4375) &amp; (y.at.imp &lt; .5625))){
+        if(prev.data$x[i] &lt; .25){
+          new.x[i] &lt;- .25 - 
+            (prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i] - .25)
+        } else{
+          new.x[i] &lt;- .25 + 
+            (.25 - prev.data$x[i] - prev.data$speed[i] * prev.data$xdir[i])
+        }
+        
+        new.xdir[i] &lt;- -prev.data$xdir[i]
+      } else{
+        new.xdir[i] &lt;- prev.data$xdir[i]
+        new.x[i] &lt;- prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i]
+      }
+      
+    # If it bounces off the right wall,
+    } else if(prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i] &gt; 1) {
+      # Then the new X position is 1 - (how far past 1 it would have gone without the wall)
+      new.x[i] &lt;- 1 - (prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i] - 1)
+      # and the new X direction is opposite
+      new.xdir[i] &lt;- -prev.data$xdir[i]
+      
+    # Else if it bounces off the left wall
+    } else if(prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i] &lt; 0) {
+      new.x[i] &lt;- -(prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i])
+      new.xdir[i] &lt;- -prev.data$xdir[i]
+      
+    # Otherwise, the new position is within the bounds
+    } else{
+      # Then the new X position is the previous plus the movement in that direction
+      new.x[i] &lt;- prev.data$x[i] + prev.data$speed[i] * prev.data$xdir[i]
+      # and the new X direction is unchanged
+      new.xdir[i] &lt;- prev.data$xdir[i]
+      }
+    
+    if(prev.data$status[i] == &quot;Dead&quot;) {
+      new.x[i] &lt;- prev.data$x[i]
+      new.xdir[i] &lt;- 0
+      new.y[i] &lt;- prev.data$y[i]
+      new.ydir[i] &lt;- 0
+      prev.data$speed[i] &lt;- 0
+      
+    # If it bounces off the ceiling,
+    } else if(prev.data$y[i] + prev.data$speed[i] * prev.data$ydir[i] &gt; 1) {
+      new.y[i] &lt;- 1 - (prev.data$y[i] + prev.data$speed[i] * prev.data$ydir[i] - 1)
+      new.ydir[i] &lt;- -prev.data$ydir[i]
+    
+    # Bounces off the floor
+    } else if(prev.data$y[i] + prev.data$speed[i] * prev.data$ydir[i] &lt; 0) {
+      new.y[i] &lt;- -(prev.data$y[i] + prev.data$speed[i] * prev.data$ydir[i])
+      new.ydir[i] &lt;- -prev.data$ydir[i]
+      
+    # Does not bounce off ceiling nor floor
+    } else{
+      new.y[i] &lt;- prev.data$y[i] + prev.data$speed[i] * prev.data$ydir[i]
+      new.ydir[i] &lt;- prev.data$ydir[i]
+    }
+  }
+  
+  new.quadrant &lt;- ifelse(new.x &gt; .25, 2, 1)
+  
+  for(i in 1:nobs){
+    
+    ### Status Changes
+    
+    # Continue with previous status
+    new.status[i] &lt;- as.character(prev.data$status[i])
+    
+    # Determine which other observations are the neighbors
+    neighbors &lt;- prev.data$obs[-i][(sqrt((new.y[-i]-new.y[i])^2 + (new.x[-i]-new.x[i])^2) &lt; .05)]
+    neighbors &lt;- neighbors[which(new.quadrant[neighbors] == new.quadrant[i])]
+    
+    # If the subject has been infected for over 160, they recover
+    if(prev.data$timeSinceInfect[i] &gt; 160) {
+      new.status[i] &lt;- &quot;Recovered&quot;
+      
+    # If the subject is susceptible, and at least one neighbor is infected, then the subject is as well
+    } else if(&quot;Infected&quot; %in% prev.data$status[neighbors] &amp; prev.data$status[i] == &quot;Susceptible&quot;) {
+      new.status[i] &lt;- &quot;Infected&quot;
+    
+    # If the subject is infected and old, then the subject has a chance of becoming dead
+    } else if(new.status[i] == &quot;Infected&quot; &amp; prev.data$Age[i] == &quot;Old&quot;) {
+      perc.infected &lt;- mean(prev.data$status == &quot;Infected&quot;)
+      new.status[i] &lt;- sample(c(&quot;Infected&quot;, &quot;Dead&quot;), 1, prob = c(1-perc.infected*.05,perc.infected*.05))
+    }
+    
+    # If infected, the infection timer increases
+    if(new.status[i] == &quot;Infected&quot;) {
+      new.timeSinceInfect[i] &lt;- prev.data$timeSinceInfect[i] + 1
+    } else {
+      new.timeSinceInfect[i] &lt;- 0
+    }
+  }
+  
+  # Relevel Status
+  new.status &lt;- factor(new.status, levels = c(&quot;Infected&quot;, &quot;Susceptible&quot;, &quot;Recovered&quot;, &quot;Dead&quot;))
+  
+  # Output dataframe after one time of movement
+  data.frame(obs = 1:nobs, x = new.x, y = new.y, 
+             xdir = new.xdir, ydir = new.ydir, 
+             speed = prev.data$speed, 
+             Age = prev.data$Age, status = new.status, 
+             timeSinceInfect = new.timeSinceInfect, 
+             time = prev.data$time + 1)
+}</code></pre>
+</details>
+<p>With the updated movement function, the graphics can show the movement and transitions of the simulated people.</p>
+<div class="figure">
+<img src="With_Barrier.gif" alt="Gif of infection with barrier" />
+<p class="caption">Gif of infection with barrier</p>
+</div>
+<p><img src="/post/CasonPosts/Coronavirus/Infection-Spread_files/figure-html/curveWithBarrier-1.png" width="768" /></p>
+<p>The barrier with no movement restriction has some impact on the development of the infection and the deaths, but not as dramatic as the limited movement.</p>
+</div>
+</div>
+<div id="simulation-with-barriers-and-less-movement" class="section level2">
+<h2>Simulation with Barriers and Less Movement</h2>
+<p>The only change from a simulation with no restrictions to a simulation with less movement is setting <span class="math inline">\(85\%\)</span> of the initial speeds to <span class="math inline">\(0\)</span>. The same is true for going from the simulation with a barrier to the simulation with a barrier and limited movement.</p>
+<pre class="r"><code>no.move.start.patients &lt;- start.patients
+new.speeds &lt;- c(start.patients$speed[1], ifelse(sapply(2:nobs,function(x) rbinom(1,1,.85)==1),0,start.patients$speed[-1]))
+no.move.start.patients$speed &lt;- new.speeds</code></pre>
+<p>There are no other changes, and the rest of the simulation is run as before, but with the <code>movement.withBarriers</code> function. Because this simulation requires more than double the time of the unrestricted simulation, the rendering time is extremely long. It took my laptop nearly <span class="math inline">\(10\)</span> hours to complete.</p>
+<div class="figure">
+<img src="With_Barrier.less.move.gif" alt="Gif of infection with barrier and limited movement" />
+<p class="caption">Gif of infection with barrier and limited movement</p>
+</div>
+<p><img src="/post/CasonPosts/Coronavirus/Infection-Spread_files/figure-html/curveWithBarrier.LessMove-1.png" width="768" /></p>
+<p>The combined effect of both the barrier and the limited movement reduces deaths dramatically. The combination of the two methods is indicative that under this framework, limiting transnational travel and limiting social movement substantially reduces deaths as opposed to simply limiting movement, simply limiting transnational travel, or doing nothing at all.</p>
+<p>This is a simple simulation that does not incorporate many factors that appear in real-life infections. The population density of a location, means of spread of an infection, or habits of a population can all influence infection spread. Simulating on a small scale, however, can give insight on potential solutions are help give intuition to spread.</p>
+</div>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" alt="Img link to Hugo website" width="22" height="22"></a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+<script src="/js/math-code.js"></script>
+<script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+    
+  </body>
+</html>
+

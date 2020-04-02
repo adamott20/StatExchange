@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.66.0" />
+
+
+<title>Bootstrapping - StatExchange</title>
+<meta property="og:title" content="Bootstrapping - StatExchange">
+
+
+  <link href='/SE_Logo.png' rel='icon' type='image/x-icon'/>
+
+
+
+  
+
+
+
+
+
+
+
+
+<link href='//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/Main_Logo.png"
+         width="50"
+         height="50"
+         alt="Logo">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/rstudio/blogdown">GitHub</a></li>
+    
+    <li><a href="https://twitter.com/rstudio">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">7 min read</span>
+    
+
+    <h1 class="article-title">Bootstrapping</h1>
+
+    
+    <span class="article-date">2020-03-05</span>
+    
+
+    <div class="article-content">
+      
+
+
+<p>Bootstrapping has always been an intriguing concept. The main idea is that resampling (with replacement) from a sample of data can give similar inference on a statistic as new draws from the population. The term  refers to the ability of a single sample to make inference on a statistic with no other resources. This methodology always reminds me of the entrepreneurial phrase “pulling yourself up by your bootstraps”.</p>
+<div id="what-is-a-bootstrap" class="section level2">
+<h2>What is a Bootstrap?</h2>
+<p>A bootstrapped sample is a form of resampling from a single sample to approximate the true distributoin of a statistic. For example, suppose I want to know about the distribution of a sample mean, <span class="math inline">\(\bar{X}\)</span>. If it were possible to get a large number of samples from the population, each with their own <span class="math inline">\(\bar{X}\)</span>, it would be easy to look at the true distribution of <span class="math inline">\(\bar{X}\)</span>.</p>
+<div id="samples-from-population" class="section level3">
+<h3>Samples from Population</h3>
+<p>As an example, say we somehow come upon <span class="math inline">\(\bar{X}\)</span> for <span class="math inline">\(10,000\)</span> different samples of size <span class="math inline">\(100\)</span> from a particular distribution. In this example, it will be from a <span class="math inline">\(Gamma(3,4)\)</span>. Below, the function, <code>gamma.sample()</code>, will get these samples. In practice, each sample is likely difficult to obtain, so this method is often not available.</p>
+<pre class="r"><code>gamma.sample &lt;- function() rgamma(100,3,4)
+xbars &lt;- sapply(1:10000, function(x) mean(gamma.sample()))</code></pre>
+<p>The density of our <span class="math inline">\(\bar{X}\)</span>s can give us a nice approximation to the true distribution of <span class="math inline">\(\bar{X}\)</span>. A density plot on these samples gives a good approximation to the truth.</p>
+<p><img src="/post/CasonPosts/Bootstrapping/BootStrapping_files/figure-html/xbar.pop.density-1.png" width="672" /></p>
+<details>
+<p><summary>Code for Above Density Plot</summary></p>
+<pre class="r"><code>library(ggplot2)
+library(reshape2)
+
+xbars.df &lt;- data.frame(&quot;Population&quot; = xbars)
+data &lt;- melt(xbars.df)
+
+ggplot(data,aes(x=value, fill=variable)) + geom_density(alpha=0.5) +
+  xlab(expression(bar(X))) + 
+  ylab(&quot;Density&quot;) + 
+  ggtitle(expression(paste(&quot;Approximate Density of  &quot;,bar(X)))) + 
+  theme(legend.position = &quot;none&quot;) </code></pre>
+</details>
+</div>
+<div id="bootstrapped-samples" class="section level3">
+<h3>Bootstrapped Samples</h3>
+<p>Actually getting <span class="math inline">\(10,000\)</span> distinct samples from a population would be much more difficult than gathering a single sample. Amazingly, through the power of bootstrapping, it is possible to approximate the true distribution of <span class="math inline">\(\bar{X}\)</span> with only a single sample! If we have <span class="math inline">\(10,000\)</span> bootstrapped samples, they can also give a good approximation, without needing to resample from the population. Bootstrapped samples are sampled (with replacement) from a single sample. In the code, <code>bootstrap.sample()</code> is a function that samples with replacement from the sample, <code>one.sample</code>, giving a new,  sample.</p>
+<pre class="r"><code>one.sample &lt;- gamma.sample()
+bootstrap.sample &lt;- function() sample(one.sample, replace = TRUE)
+boot.xbars &lt;- sapply(1:10000, function(x) mean(bootstrap.sample()))</code></pre>
+<p>Using each bootstrapped sample as if it were a unique sample from the population is enough to approximate the true distribution of <span class="math inline">\(\bar{X}\)</span>.</p>
+<p><img src="/post/CasonPosts/Bootstrapping/BootStrapping_files/figure-html/xbar.boot.density-1.png" width="672" /></p>
+<details>
+<p><summary>Code for Above Density Plots</summary></p>
+<pre class="r"><code>all.xbars &lt;- data.frame(&quot;Population&quot; = xbars, &quot;Bootstrapped&quot; = boot.xbars)
+data &lt;- melt(all.xbars)
+
+ggplot(data,aes(x=value, fill=variable)) + geom_density(alpha=0.5) +
+  xlab(expression(bar(X))) + 
+  ylab(&quot;Density&quot;) + 
+  ggtitle(expression(paste(&quot;Approximate Density of  &quot;,bar(X)))) + 
+  theme(legend.title = element_blank()) </code></pre>
+</details>
+</div>
+</div>
+<div id="when-is-bootstrapping-helpful" class="section level2">
+<h2>When is Bootstrapping Helpful?</h2>
+<p>Bootstrapping may be useful for approximating the true distribution of <span class="math inline">\(\bar{X}\)</span>, but there are  practical examples to when bootrapping can be useful. This method can help with confidence intervals, prediction intervals, hypothesis tests, or other measurements of uncertainty for statistics when it may be difficult or impossible to obtain in closed form.</p>
+<div id="example-prediction-in-simple-linear-regression" class="section level3">
+<h3>Example: Prediction in Simple Linear Regression</h3>
+<p>To start, say we have samples from a simple linear model, <span class="math inline">\(y_i=\beta_0 + x_i\beta_1+\epsilon_i\)</span>, where <span class="math inline">\(\epsilon_i\sim N(0,\sigma^2)\)</span>. Fortunately, we know that a prediction, <span class="math inline">\(\hat{y}\)</span>, on a new <span class="math inline">\(x^\star\)</span> is normally distributed. In fact, <span class="math inline">\(\hat{y}\sim N(\beta_0+x^\star\beta_1,\sigma^2)\)</span>. Because we know this distribution, we can estimate <span class="math inline">\(\hat{\beta_0}\)</span>, <span class="math inline">\(\hat{\beta_1}\)</span>, and <span class="math inline">\(\hat{\sigma}^2\)</span> to give approximate prediction intervals on <span class="math inline">\(\hat{y}\)</span>.</p>
+<p>In the code below, we have <span class="math inline">\(100\)</span> samples from the true model <span class="math inline">\(y_i=5+x_i*2+\epsilon_i\)</span>, where <span class="math inline">\(\epsilon_i\sim N(0,.75^2)\)</span>.</p>
+<pre class="r"><code>beta0 &lt;- 5
+beta1 &lt;- 2
+n &lt;- 100
+sigma &lt;- .75
+
+x &lt;- runif(n)
+epsilon &lt;- rnorm(n, 0, sd = sigma)
+y &lt;- beta0 + x * beta1 + epsilon</code></pre>
+<p>If we fit a standard linear model, with assumptions of normality, we can see that the estimates for <span class="math inline">\(\hat{\beta_0}\)</span>, <span class="math inline">\(\hat{\beta_1}\)</span>, and <span class="math inline">\(\hat{\sigma}^2\)</span> are pretty close to the true values, giving decent approximations for predictions and prediction intervals.</p>
+<pre class="r"><code>lin.model &lt;- lm(y~x)
+
+betahat &lt;- as.numeric(lin.model$coefficients)
+sigmahat &lt;- summary(lin.model)$sigma
+
+betahat</code></pre>
+<pre><code>## [1] 4.949982 2.151056</code></pre>
+<pre class="r"><code>sigmahat</code></pre>
+<pre><code>## [1] 0.7212661</code></pre>
+<p><img src="/post/CasonPosts/Bootstrapping/BootStrapping_files/figure-html/linearPlot-1.png" width="672" /></p>
+<details>
+<p><summary>Code for Above Plot</summary></p>
+<pre class="r"><code>library(ggplot2)
+data &lt;- data.frame(y,x)
+ggplot(data, aes(y=y, x=x)) + 
+  geom_point() + 
+  geom_smooth(method = &#39;lm&#39;, se = FALSE) + 
+  ggtitle(&quot;Simple Linear Regression&quot;)</code></pre>
+</details>
+<p>From these estimates, we can get the approximated distribution of a new <span class="math inline">\(y\)</span>, given any <span class="math inline">\(x\)</span> value. In this example, we have <span class="math inline">\(x=.85\)</span>. Theory tells us that <span class="math inline">\(y|x\dot{\sim} N(\hat{\beta_0} + x\hat{\beta_1},\hat{\sigma}^2)\)</span>. From this, we can get a <span class="math inline">\(95\%\)</span> prediction interval for <span class="math inline">\(y\)</span>, given the new <span class="math inline">\(x\)</span>.</p>
+<pre class="r"><code>xnew &lt;- .85
+ypred &lt;- betahat[1] + xnew * betahat[2]
+
+pred.int &lt;- ypred + qnorm(c(.025, .975), 0, sd = sigmahat)
+ypred</code></pre>
+<pre><code>## [1] 6.778379</code></pre>
+<pre class="r"><code>pred.int</code></pre>
+<pre><code>## [1] 5.364724 8.192035</code></pre>
+<p>If we knew the true distribution of <span class="math inline">\(y_i\)</span>, the prediction interval for the new <span class="math inline">\(y\)</span> would be exact.</p>
+<pre class="r"><code>ypred.true &lt;- beta0 + xnew * beta1
+
+true.pred.int &lt;- qnorm(c(.025,.975), ypred.true, sd = sigma)
+ypred.true</code></pre>
+<pre><code>## [1] 6.7</code></pre>
+<pre class="r"><code>true.pred.int</code></pre>
+<pre><code>## [1] 5.230027 8.169973</code></pre>
+<p>Suppose that we knew nothing about the true distribution of <span class="math inline">\(\epsilon_i\)</span>, obtaining a prediction interval for the new <span class="math inline">\(y\)</span> would be impossible. Let us ignore this assumption for this case and use bootstrapping instead. First, we would need to get bootstrapped samples of the residuals from a linear model.</p>
+<pre class="r"><code>boot.resid.sample &lt;- function() {
+  boot.index &lt;- sample(1:n, replace = TRUE)
+  boot.resid &lt;- residuals(lin.model)[boot.index]
+  return(boot.resid)
+}
+
+boot.resids &lt;- lapply(1:1000, function(x) boot.resid.sample())</code></pre>
+<p>These bootstrapped residuals can be used to approximations for both the expected <span class="math inline">\(\hat{y}\)</span>, and its prediction interval. By bootstrapping, we have avoided the normality assumption entirely and gotten very similar prediction intervals to those when assuming normality.</p>
+<pre class="r"><code>this.pred &lt;- c()
+pred.lwr.pi &lt;- c()
+pred.upr.pi &lt;- c()
+
+for(i in 1:1000){
+  pred.lwr.pi[i] &lt;- ypred + as.numeric(quantile(boot.resids[[i]], .025))
+  pred.upr.pi[i] &lt;- ypred + as.numeric(quantile(boot.resids[[i]], .975))
+}
+
+boot.pred.int &lt;- c(mean(pred.lwr.pi), mean(pred.upr.pi))
+
+ypred</code></pre>
+<pre><code>## [1] 6.778379</code></pre>
+<pre class="r"><code>boot.pred.int</code></pre>
+<pre><code>## [1] 5.601059 8.014272</code></pre>
+<p>For normally distributed residuals, bootstrapping a prediction interval isn’t particularly helpful. What if the residuals are not normally distributed? The assumptions earlier that provided the approximate distribution (and therefore prediction intervals) of <span class="math inline">\(\hat{y}\)</span> no longer apply. Without bootstrapping, we would be at a loss for how to get prediction intervals on a new <span class="math inline">\(y\)</span>, especially if the distribution of the residuals was unknown entirely.</p>
+<p>Let us generate samples through the same example as above, but with <span class="math inline">\(\epsilon_i\sim Unif(-1,1)\)</span>.</p>
+<pre class="r"><code>epsilon &lt;- runif(n, -1, 1)
+y &lt;- beta0 + x * beta1 + epsilon</code></pre>
+<p><img src="/post/CasonPosts/Bootstrapping/BootStrapping_files/figure-html/linearPlot.unif-1.png" width="672" /></p>
+<details>
+<p><summary>Code for Above Plot</summary></p>
+<pre class="r"><code>library(ggplot2)
+data &lt;- data.frame(y,x)
+ggplot(data, aes(y=y, x=x)) + 
+  geom_point() + 
+  geom_smooth(method = &#39;lm&#39;, se = FALSE) + 
+  ggtitle(&quot;Simple Linear Regression&quot;)</code></pre>
+</details>
+<p>The mean predictions form a linear model (assuming normality) are still valid, but now the prediction interval must be bootstrapped.</p>
+<pre class="r"><code>lin.model &lt;- lm(y~x)
+betahat &lt;- as.numeric(lin.model$coefficients)
+ypred &lt;- betahat[1] + xnew * betahat[2]
+
+boot.resids &lt;- lapply(1:1000, function(x) boot.resid.sample())
+
+this.pred &lt;- c()
+pred.lwr.pi &lt;- c()
+pred.upr.pi &lt;- c()
+
+for(i in 1:1000){
+  pred.lwr.pi[i] &lt;- ypred + as.numeric(quantile(boot.resids[[i]], .025))
+  pred.upr.pi[i] &lt;- ypred + as.numeric(quantile(boot.resids[[i]], .975))
+}
+
+boot.pred.int &lt;- c(mean(pred.lwr.pi), mean(pred.upr.pi))
+
+ypred</code></pre>
+<pre><code>## [1] 6.706305</code></pre>
+<pre class="r"><code>boot.pred.int</code></pre>
+<pre><code>## [1] 5.800791 7.668947</code></pre>
+<p>Because we manufactured this data, we can still get the true prediction intervals and compare to the bootstrapped intervals. The bootstrapped prediction intervals are reasonable approximations for the true prediction intervals.</p>
+<pre class="r"><code>ypred.true</code></pre>
+<pre><code>## [1] 6.7</code></pre>
+<pre class="r"><code>ypred.true + qunif(c(.025,.975), -1, 1)</code></pre>
+<pre><code>## [1] 5.75 7.65</code></pre>
+<p>The times that bootstrapping come in handy for me is when I am using a model that has no distributional asusmptions. For example, when I use Lasso regression, there is no closed-form solution to confidence intervals on <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span> or to prediction intervals. These are both intervals that can be bootstrapped with no distributional assumptions. Bootstrapping can also help in ridge regression, time series analysis (and other correlated data), or whenever one is not confident about the underlying distributional characteristics of a model. Even when theory is available for “better” estimates, bootstrapping can still be a reasonable approximation.</p>
+<p>Anytime the distribution of a sample statistic is not known, bootstrapping can be used to approximate the distribution of the sample statistic. If one is interested in the true distribution of the median, minimum, or any other sample statistic, bootstrapping can be the way to go.</p>
+</div>
+</div>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" alt="Img link to Hugo website" width="22" height="22"></a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+<script src="/js/math-code.js"></script>
+<script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+    
+  </body>
+</html>
+

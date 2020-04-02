@@ -6,10 +6,20 @@
     <description>Recent content in R Markdown on StatExchange</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 23 Jul 2015 21:13:14 -0500</lastBuildDate>
+    <lastBuildDate>Thu, 05 Mar 2020 21:13:14 -0500</lastBuildDate>
     
 	<atom:link href="/tags/r-markdown/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Bootstrapping</title>
+      <link>/2020/03/05/bootstrapping/</link>
+      <pubDate>Thu, 05 Mar 2020 21:13:14 -0500</pubDate>
+      
+      <guid>/2020/03/05/bootstrapping/</guid>
+      <description>Bootstrapping has always been an intriguing concept. The main idea is that resampling (with replacement) from a sample of data can give similar inference on a statistic as new draws from the population. The term refers to the ability of a single sample to make inference on a statistic with no other resources. This methodology always reminds me of the entrepreneurial phrase “pulling yourself up by your bootstraps”.
+What is a Bootstrap?</description>
+    </item>
     
     <item>
       <title>Hello R Markdown</title>

@@ -21,6 +21,16 @@
     </item>
     
     <item>
+      <title>Bootstrapping</title>
+      <link>/2020/03/05/bootstrapping/</link>
+      <pubDate>Thu, 05 Mar 2020 21:13:14 -0500</pubDate>
+      
+      <guid>/2020/03/05/bootstrapping/</guid>
+      <description>Bootstrapping has always been an intriguing concept. The main idea is that resampling (with replacement) from a sample of data can give similar inference on a statistic as new draws from the population. The term refers to the ability of a single sample to make inference on a statistic with no other resources. This methodology always reminds me of the entrepreneurial phrase “pulling yourself up by your bootstraps”.
+What is a Bootstrap?</description>
+    </item>
+    
+    <item>
       <title>A Plain Markdown Post</title>
       <link>/2016/12/30/a-plain-markdown-post/</link>
       <pubDate>Fri, 30 Dec 2016 21:49:57 -0700</pubDate>
@@ -61,22 +71,13 @@ summary(cars)## speed dist ## Min. : 4.0 Min. : 2.00 ## 1st Qu.:12.0 1st Qu.: 2
     </item>
     
     <item>
-      <title>Bootstrapping</title>
-      <link>/1/01/01/bootstrapping/</link>
+      <title>Infection Spread</title>
+      <link>/1/01/01/infection-spread/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/1/01/01/bootstrapping/</guid>
-      <description>Bootstrapping has always been an intriguing concept. The main idea is that resampling (with replacement) from a sample of data can give similar inference on a statistic as new draws from the population. The term refers to the ability of a single sample to make inference on a statistic with no other resources. This methodology always reminds me of the entrepreneurial phrase “pulling yourself up by your bootstraps”.
-What is a Bootstrap?</description>
-    </item>
-    
-    <item>
-      <title>Regression with Non-Linear Effexts</title>
-      <link>/1/01/01/regression-with-non-linear-effexts/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>/1/01/01/regression-with-non-linear-effexts/</guid>
-      <description></description>
+      <guid>/1/01/01/infection-spread/</guid>
+      <description>2020 has been a wild year. COVID 19 has everyone reeling, trying to figure out what this means for us. So many conversations and initiatives surround the idea of trying to “flatten the curve.” Some obsessively check the CDC update of the number of cases in their home country or use percents of those infected to convince themselves this isn’t that bad.
+I am no expert on infections, but I also have been thinking about the impact of COVID 19 recently.</description>
     </item>
     
   </channel>
