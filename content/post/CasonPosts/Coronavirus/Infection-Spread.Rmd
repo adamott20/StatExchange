@@ -46,7 +46,7 @@ start.patients <- data.frame(obs = 1:nobs,
 
 These locations and the directions can be displayed in a plot. I used the `ggplot2` and `gganimate` libraries for these simulations. The speed is multiplied by $10$, so that it is shown how far an observation will move after $10$ frames, so that the direction is more clear. The observations are randomly assigned a starting place, direction, and speed.
 
-```{r start.plot, echo = FALSE}
+```{r gapminder, fig.show='animate', ffmpeg.format='gif', dev='jpeg'}
 ggplot(start.patients, aes(x = x, y = y, 
                            xend = x + 10 * speed * xdir,
                            yend = y + 10 * speed * ydir, 
