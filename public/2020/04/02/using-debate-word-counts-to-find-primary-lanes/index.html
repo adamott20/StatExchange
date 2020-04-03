@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.66.0" />
+
+
+<title>Using Debate Word Counts to Find Primary Lanes - StatExchange</title>
+<meta property="og:title" content="Using Debate Word Counts to Find Primary Lanes - StatExchange">
+
+
+  <link href='/SE_Logo.png' rel='icon' type='image/x-icon'/>
+
+
+
+  
+
+
+
+
+
+
+
+
+<link href='//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/Main_Logo.png"
+         width="50"
+         height="50"
+         alt="Logo">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/rstudio/blogdown">GitHub</a></li>
+    
+    <li><a href="https://twitter.com/rstudio">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">6 min read</span>
+    
+
+    <h1 class="article-title">Using Debate Word Counts to Find Primary Lanes</h1>
+
+    
+    <span class="article-date">2020-04-02</span>
+    
+
+    <div class="article-content">
+      
+
+
+<p>When Pete Buttigieg and Amy Klobuchar dropped out of the Democratic Presidential Primary the days before Super Tuesday, many of their supporters flocked to now heavy frontrunner Joe Biden. It was what more moderate Democrats had been claiming for months. If the moderate wing of the Democratic party could consolidate around a single candidate, that candidate would win the primary election. For months, the moderate lane had been too crowded.</p>
+<p>The concept of primary lanes has been floated around throughout the Democratic primary. A lane is a chunk of the party that candidates compete to capture. This chunk is most often ideological. For example, Elizabeth Warren and Bernie Sanders were thought to have shared the Progressive Lane, while Biden, Buttigieg, and Klobuchar shared the Moderate Lane. However, lanes could be due to having a similar background or a similar target demographic. These lanes are harder to detect.</p>
+<p>After hearing a talk given by RStudio Data Scientist Julia Silge about word vectors, I wondering if I could connect Democratic candidates through the words they used. Though I’m no expert in text data analysis, the analysis I performed provided interesting insights on Democratic primary lanes and may serve as a starting point for others interested in text data analysis or looking back at the primary.</p>
+<p>Kaggle currently hosts a data set with all the text from the Democratic primary debates, taken from rev.com.</p>
+<p>The data set contains the text for the entire debate, including the moderators. Because we are only interested in the candidates, the first step of cleaning the data set is to filter down to the rows that were spoken by a candidate. From there, we will break down each speech to individual words and get rid of any words that were rarely used.</p>
+<pre class="r"><code>candidates &lt;- c(&quot;Elizabeth Warren&quot;, &quot;Bernie Sanders&quot;, &quot;Joe Biden&quot;, &quot;Pete Buttigieg&quot;, &quot;Amy Klobuchar&quot;, &quot;Tom Steyer&quot;, &quot;Cory Booker&quot;, &quot;Kamala Harris&quot;, &quot;Beto O&#39;Rourke&quot;, &quot;Tulsi Gabbard&quot;, &quot;Andrew Yang&quot;, &quot;Julian Castro&quot;, &quot;Bill de Blasio&quot;, &quot;John Delaney&quot;, &quot;Michael Bloomberg&quot;, &quot;Kirsten Gillibrand&quot;, &quot;Marianne Williamson&quot;, &quot;Jay Inslee&quot;, &quot;Tim Ryan&quot;)
+
+tidy_debate &lt;- debate %&gt;% filter(speaker %in% candidates) %&gt;%
+  select(speaker, speech) %&gt;% 
+  unnest_tokens(word, speech) %&gt;% 
+  group_by(word) %&gt;% 
+  filter(n() &gt;= 20) %&gt;% 
+  ungroup()</code></pre>
+<p>From there, I removed any stop words (the, and, is, etc.) since those common words don’t reval anything interesting about a candidate. I then counted the number of times each candidate said each word and spread out the candidates as columns of a tibble.</p>
+<pre class="r"><code>data(stop_words)
+
+debate_mat &lt;- tidy_debate %&gt;% filter(is.na(as.numeric(word))) %&gt;%
+  filter(!(word %in% stop_words$word)) %&gt;% 
+  count(speaker, word) %&gt;% 
+  select(speaker, word, n) %&gt;% 
+  pivot_wider(word, names_from = speaker, values_from = n)
+
+debate_mat_clean &lt;- as.matrix(debate_mat[,-1])
+debate_mat_clean[is.na(debate_mat_clean)] &lt;- 0
+rownames(debate_mat_clean) &lt;- debate_mat$word</code></pre>
+<p>With the data organized like this, it was an easy task to create a correlation matrix and heatmap that found the correlation between the word counts of all candidates. The code to generate this heatmap was taken and modified from a tutorial at <a href="http://www.sthda.com/english/wiki/ggplot2-quick-correlation-matrix-heatmap-r-software-and-data-visualization" class="uri">http://www.sthda.com/english/wiki/ggplot2-quick-correlation-matrix-heatmap-r-software-and-data-visualization</a>.</p>
+<p><img src="/post/2020-04-02-using-debate-word-counts-to-find-primary-lanes_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<details>
+<p><summary>Code for creating heatmap</summary></p>
+<pre class="r"><code>cormat &lt;- (cor(debate_mat_clean))
+
+get_upper_tri &lt;- function(cormat){
+  cormat[lower.tri(cormat)]&lt;- NA
+  cormat
+}
+
+reorder_cormat &lt;- function(cormat){
+  # Use correlation between variables as distance
+  dd &lt;- as.dist((1-cormat)/2)
+  hc &lt;- hclust(dd)
+  cormat &lt;-cormat[hc$order, hc$order]
+}
+
+cormat &lt;- reorder_cormat(cormat)
+upper_tri &lt;- get_upper_tri(cormat)
+# Melt the correlation matrix
+melted_cormat &lt;- melt(upper_tri, na.rm = TRUE)
+# Create a ggheatmap
+ggheatmap &lt;- ggplot(melted_cormat, aes(Var2, Var1, fill = value))+
+  geom_tile(color = &quot;white&quot;)+
+  scale_fill_gradient2(low = &quot;blue&quot;, high = &quot;red&quot;, mid = &quot;white&quot;, midpoint = .5, limit = c(.01,.99), space = &quot;Lab&quot;, name=&quot;Debate Similarity&quot;) +
+  theme_minimal()+ # minimal theme
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+                                   hjust = 1))+ coord_fixed()
+
+ggheatmap + 
+  geom_text(aes(Var2, Var1, label = round(value,2)), color = &quot;black&quot;, size = 2) +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank(),
+    axis.ticks = element_blank(),
+    legend.justification = c(1, 0),
+    legend.position = c(0.6, 0.7),
+    legend.direction = &quot;horizontal&quot;)+
+  guides(fill = guide_colorbar(barwidth = 7, barheight = 1, title.position = &quot;top&quot;, title.hjust = 0.5)) +
+  labs(title = &quot;Democratic Debate Lanes&quot;, subtitle = &quot;Correlation in Debate Word Counts&quot;)</code></pre>
+</details>
+<p>Candidates that have more correlated word counts may have similar rhetoric, similar important issues, or a similar background. I propose that this makes it likely that they share a lane.</p>
+<p>The heatmap detects the moderate and progressive lanes, with the word counts Biden, Buttigieg, and Klobuchar all highly correlated, and the word counts of Sanders and Warren also highly correlated.</p>
+<p>However, just as interesting are other pairs of candiates that may have shared a lane without people noticing</p>
+<ul>
+<li>Cory Booker and Pete Buttigieg: The “young and cool” lane (<span class="math inline">\(\rho\)</span> = .76)</li>
+</ul>
+<p>Many college students flocked to the progressive policies of Sanders and Warren, but others chose to support Booker or Buttigeig. Both of these candidates had a positive energy among younger people, likely due to their own age and excitement.</p>
+<ul>
+<li>Cory Booker and Kamala Harris: The “Obama/Biden” lane (<span class="math inline">\(\rho\)</span> = .73)</li>
+</ul>
+<p>When Barack Obama won the 2008 election, he did so with tremendous support of young voters and African American voters. Both Booker and Harris tried to connect to these voting blocks to build their coalition, but unfortunately for them, most of these voters chose to stay with Biden.</p>
+<ul>
+<li>Joe Biden and Michael Bloomberg: The “Electable” lane (<span class="math inline">\(\rho\)</span> = .67)</li>
+</ul>
+<p>Bloomberg ran a very different type of campaign and only appeared in two debates. However, the candidate to whom he was most similar was Joe Biden. Both candidates were older white males, had the support of much of the party establishment, and ran on a somewhat moderate/centrist/“back to normal” platform. When Biden’s support grew days before Super Tuesday, that spelled the end for Bloomberg’s campaign.</p>
+<p>Other possible observations:</p>
+<ul>
+<li><p>The candidates who at one point tried to pose themselves as a candidate the entire party could get around (Booker, Buttigieg, Biden, Warren) had higher correlations with other candidates than candidates who framed themselves as outsiders (Sanders, Tulsi Gabbard).</p></li>
+<li><p>Of the candidates who garnered the most support, the most distinct were Biden and Sanders (<span class="math inline">\(\rho\)</span> = .59). The two ran vastly different campaigns and had different bases, which may be the reason they ended up as the final two candidates.</p></li>
+<li><p>The two least similar candidates were Jay Inslee and Kirsten Gillibrand. This is possibly becuase neither lasted very long on the campaign trail and both are mostly known for their work on single issue (climate change and women’s rights, respectively).</p></li>
+</ul>
+<p>This analysis was relatively simple, but had compelling results. I look forward to doing similar analyses on other texts to see if it is generalizeable to other fields.</p>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+          <li>
+            <a href="https://gohugo.io/" class="footer-links-kudos">Made with <img src="/images/hugo-logo.png" alt="Img link to Hugo website" width="22" height="22"></a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+<script src="/js/math-code.js"></script>
+<script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+    
+  </body>
+</html>
+

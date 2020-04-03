@@ -12,6 +12,25 @@
     
     
     <item>
+      <title>Using Debate Word Counts to Find Primary Lanes</title>
+      <link>/2020/04/03/using-debate-word-counts-to-find-primary-lanes/</link>
+      <pubDate>Fri, 03 Apr 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/2020/04/03/using-debate-word-counts-to-find-primary-lanes/</guid>
+      <description>When Pete Buttigieg and Amy Klobuchar dropped out of the Democratic Presidential Primary the days before Super Tuesday, many of their supporters flocked to now heavy frontrunner Joe Biden. It was what more moderate Democrats had been claiming for months. If the moderate wing of the Democratic party could consolidate around a single candidate, that candidate would win the primary election. For months, the moderate lane had been too crowded.</description>
+    </item>
+    
+    <item>
+      <title>Infection Spread</title>
+      <link>/2020/04/02/infection-spread/</link>
+      <pubDate>Thu, 02 Apr 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/2020/04/02/infection-spread/</guid>
+      <description>2020 has been a wild year. COVID 19 has everyone reeling, trying to figure out what this means for us. So many conversations and initiatives surround the idea of trying to “flatten the curve.” Some obsessively check the CDC update of the number of cases in their home country or use percents of those infected to convince themselves this isn’t that bad.
+I am no expert on infections, but I also have been thinking about the impact of COVID 19 recently.</description>
+    </item>
+    
+    <item>
       <title>Test Post</title>
       <link>/2020/03/10/test-post/</link>
       <pubDate>Tue, 10 Mar 2020 00:00:00 +0000</pubDate>
@@ -68,16 +87,6 @@ summary(cars)## speed dist ## Min. : 4.0 Min. : 2.00 ## 1st Qu.:12.0 1st Qu.: 2
       
       <guid>/2015/01/01/lorem-ipsum/</guid>
       <description>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</description>
-    </item>
-    
-    <item>
-      <title>Infection Spread</title>
-      <link>/1/01/01/infection-spread/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>/1/01/01/infection-spread/</guid>
-      <description>2020 has been a wild year. COVID 19 has everyone reeling, trying to figure out what this means for us. So many conversations and initiatives surround the idea of trying to “flatten the curve.” Some obsessively check the CDC update of the number of cases in their home country or use percents of those infected to convince themselves this isn’t that bad.
-I am no expert on infections, but I also have been thinking about the impact of COVID 19 recently.</description>
     </item>
     
   </channel>
