@@ -1,0 +1,59 @@
+---
+title: "House Prices"
+author: "Cason Wight"
+date: "5/2/2020"
+output: html_document
+---
+
+The data were obtained from a [kaggle competition](https://www.kaggle.com/c/house-prices-advanced-regression-techniques/data).
+
+
+##### Loading the Necessary Packages {.tabset .tabset-pills .tabset-fade}
+
+###### R
+
+I will use dplyr and tibble from the tidyverse for data manipulation and ggplot for visualizations.
+
+```{r packages}
+library(ggplot2)
+library(dplyr)
+library(tibble)
+```
+
+###### Python
+
+I will use pandas and numpy for data manipulation and matplotlib for visualizations.
+
+```{python pypackages}
+import pandas as pd
+import numpy as np
+import random
+import matplotlib.pyplot as plt
+```
+
+##### Reading in the Data {.tabset .tabset-pills .tabset-fade}
+
+```{r seed, echo = FALSE}
+set.seed(1)
+```
+
+```{python seedPy, echo = FALSE}
+random.seed(1)
+```
+
+
+###### R 
+
+```{r readData}
+train1 <- tibble(read.csv("train.csv")[,-1])
+head(train1)
+```
+
+###### Python 
+
+```{python readDataPy}
+train2 = pd.read_csv("train.csv").iloc[:,1:]
+train2.head()
+```
+
+
