@@ -5,6 +5,8 @@ date: "5/2/2020"
 output: html_document
 ---
 
+Since getting married, my wife and I have always talked about what we would look for in a home. Whenever we are traveling, we open Zillow to get estimated prices for the houses that we see. I am honestly surprised by which houses end up more expensive. 
+
 The data were obtained from a [kaggle competition](https://www.kaggle.com/c/house-prices-advanced-regression-techniques/data).
 
 
@@ -14,7 +16,7 @@ The data were obtained from a [kaggle competition](https://www.kaggle.com/c/hous
 
 I will use dplyr and tibble from the tidyverse for data manipulation and ggplot for visualizations.
 
-```{r packages}
+```{r packages, message = FALSE}
 library(ggplot2)
 library(dplyr)
 library(tibble)
@@ -24,7 +26,7 @@ library(tibble)
 
 I will use pandas and numpy for data manipulation and matplotlib for visualizations.
 
-```{python pypackages}
+```{python pypackages, message = FALSE}
 import pandas as pd
 import numpy as np
 import random
