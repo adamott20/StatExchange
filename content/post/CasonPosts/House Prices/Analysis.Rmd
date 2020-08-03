@@ -5,57 +5,120 @@ date: "5/2/2020"
 output: html_document
 ---
 
-Since getting married, my wife and I have always talked about what we would look for in a home. Whenever we are traveling, we open Zillow to get estimated prices for the houses that we see. I am honestly surprised by which houses end up more expensive. 
+Since getting married, my wife and I have always talked about what we would look for in a home. Whenever we are traveling, we open Zillow to get estimated prices for the houses that we see. I am honestly surprised by which houses end up more expensive. This post will be a simple exploratory data analysis and initial modeling of house prices. This type of raw, initial look is inspired by the weekly *tidy tuesday* screencasts from [Julia Silge](https://www.youtube.com/channel/UCTTBgWyJl2HrrhQOOc710kA) and [David Robinson](https://www.youtube.com/user/safe4democracy) from `Rstudio`. For anyone interested indeveloping their general workflow and abilities in the `tidyverse`, I would highly recommend tuning in to these weekly posts. 
 
-The data were obtained from a [kaggle competition](https://www.kaggle.com/c/house-prices-advanced-regression-techniques/data).
+The data were obtained from a [kaggle competition](https://www.kaggle.com/c/house-prices-advanced-regression-techniques/data). The *tidy tuesday* screencasts are done in `R` using the `tidyverse`. I have been working on my `python` skills, so I have repeated my analysis in python's `pandas` as well. 
+
+
+```{r importR, echo = FALSE}
+library(knitr)
+library(reticulate)
+knitr::knit_engines$set(python = reticulate::eng_python)
+
+use_python('/Users/cason/anaconda3/envs/Rstudio_Env')
+# prints the python configuration
+py_config()
+```
+
+
+```{python import, echo = FALSE}
+import os as os
+import PyQt5
+os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Users/cason/Anaconda3/Library/plugins/platforms'
+```
 
 
 ##### Loading the Necessary Packages {.tabset .tabset-pills .tabset-fade}
 
 ###### R
 
-I will use dplyr and tibble from the tidyverse for data manipulation and ggplot for visualizations.
+I will use the tidyverse for data manipulation (ggplot2 for visualizations).
 
 ```{r packages, message = FALSE}
-library(ggplot2)
-library(dplyr)
-library(tibble)
+library(tidyverse)
+library(lubridate)
+library(scales)
 ```
 
 ###### Python
 
-I will use pandas and numpy for data manipulation and matplotlib for visualizations.
+I will use pandas and numpy for data manipulation and seaborn for visualizations.
 
 ```{python pypackages, message = FALSE}
+import PyQt5
 import pandas as pd
 import numpy as np
 import random
+import seaborn as sns
 import matplotlib.pyplot as plt
 ```
 
 ##### Reading in the Data {.tabset .tabset-pills .tabset-fade}
 
-```{r seed, echo = FALSE}
-set.seed(1)
-```
-
-```{python seedPy, echo = FALSE}
-random.seed(1)
-```
-
 
 ###### R 
 
-```{r readData}
-train1 <- tibble(read.csv("train.csv")[,-1])
-head(train1)
+```{r readData, message=FALSE}
+train.r <- read_csv("train.csv")[,-1]
+head(train.r)
 ```
 
 ###### Python 
 
 ```{python readDataPy}
-train2 = pd.read_csv("train.csv").iloc[:,1:]
-train2.head()
+train_py = pd.read_csv("train.csv").iloc[:,1:]
+train_py.head()
 ```
+
+##### Are Prices Increasing over Time? {.tabset .tabset-pills .tabset-fade}
+
+###### R
+
+
+```{r counts, message = FALSE}
+train.r$dateSold <- as.POSIXct(paste(train.r$YrSold,train.r$MoSold, "01", sep = "-"),format='%Y-%m-%d')
+
+train.r %>% group_by(dateSold, OverallCond) %>% 
+  summarize(price = mean(SalePrice)) %>% 
+  mutate(OverallCond = factor(OverallCond, levels = 9:1)) %>% 
+  ggplot(aes(dateSold, price, color = OverallCond)) +
+  geom_line() + 
+  facet_wrap(~ OverallCond) +
+  labs(title = "House Prices over Time", x = "Date", color = "Overall House\n Condition", subtitle = "Lower-value homes did not see the same price Drop") + 
+  scale_y_continuous(name="Price", labels = scales::dollar)
+```
+
+
+###### Python 
+
+```{python countspy}
+train_py['dateSold'] = pd.to_datetime(train_py['YrSold'].astype(str) + train_py['MoSold'].astype(str), format='%Y%m')
+grouped_prices_py = (train_py
+  .groupby(['dateSold', 'OverallCond'])
+  .mean()['SalePrice']
+  .unstack()
+  .reset_index()
+  .melt("dateSold")
+  .dropna(axis = 0))
+
+# fg = sns.FacetGrid(grouped_prices_py, col = "OverallCond", hue = "OverallCond", col_wrap = 3, height = 3, )
+# fg.map(sns.pointplot, "dateSold", "value", ci = "None")
+
+#plt.plot(grouped_prices_py.dateSold, grouped_prices_py.value)
+#plt.show()
+#plt.clf()
+
+print(grouped_prices_py)
+
+# fg = sns.FacetGrid(data=grouped_prices_py, hue='OverallCond', aspect=1.61)
+# fg.map(plt.scatter, 'dateSold', 'value').add_legend()
+```
+
+```{python plots, eval = TRUE}
+fig, ax = plt.subplots( nrows=1, ncols=1 )
+ax.plot(grouped_prices_py.dateSold, grouped_prices_py.value)
+fig.savefig("price_by_time.png")
+```
+
 
 
