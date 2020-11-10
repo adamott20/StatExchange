@@ -13,20 +13,10 @@ The data were obtained from a [kaggle competition](https://www.kaggle.com/c/hous
 ```{r importR, echo = FALSE}
 library(knitr)
 library(reticulate)
-knitr::knit_engines$set(python = reticulate::eng_python)
-
-use_python('/Users/cason/anaconda3/envs/Rstudio_Env')
-# prints the python configuration
-py_config()
+use_python("C:/Users/cason/anaconda3/python.exe") # Change accordingly to your Python version
+matplotlib <- import("matplotlib")
+matplotlib$use("Agg", force = TRUE)
 ```
-
-
-```{python import, echo = FALSE}
-import os as os
-import PyQt5
-os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = 'C:/Users/cason/Anaconda3/Library/plugins/platforms'
-```
-
 
 ##### Loading the Necessary Packages {.tabset .tabset-pills .tabset-fade}
 
@@ -45,12 +35,10 @@ library(scales)
 I will use pandas and numpy for data manipulation and seaborn for visualizations.
 
 ```{python pypackages, message = FALSE}
-import PyQt5
 import pandas as pd
 import numpy as np
 import random
-import seaborn as sns
-import matplotlib.pyplot as plt
+from plotnine import ggplot, aes, geom_point, geom_line
 ```
 
 ##### Reading in the Data {.tabset .tabset-pills .tabset-fade}
@@ -101,20 +89,14 @@ grouped_prices_py = (train_py
   .melt("dateSold")
   .dropna(axis = 0))
 
-# fg = sns.FacetGrid(grouped_prices_py, col = "OverallCond", hue = "OverallCond", col_wrap = 3, height = 3, )
-# fg.map(sns.pointplot, "dateSold", "value", ci = "None")
 
-#plt.plot(grouped_prices_py.dateSold, grouped_prices_py.value)
-#plt.show()
-#plt.clf()
+#print(grouped_prices_py.head())
 
-print(grouped_prices_py)
-
-# fg = sns.FacetGrid(data=grouped_prices_py, hue='OverallCond', aspect=1.61)
-# fg.map(plt.scatter, 'dateSold', 'value').add_legend()
+(ggplot(grouped_prices_py, aes(x = "dateSold", y = "value"))
+  + geom_point())
 ```
 
-```{python plots, eval = TRUE}
+```{python plots, eval = FALSE}
 fig, ax = plt.subplots( nrows=1, ncols=1 )
 ax.plot(grouped_prices_py.dateSold, grouped_prices_py.value)
 fig.savefig("price_by_time.png")

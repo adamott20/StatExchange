@@ -371,6 +371,12 @@ summary {
 
 <p>Since getting married, my wife and I have always talked about what we would look for in a home. Whenever we are traveling, we open Zillow to get estimated prices for the houses that we see. I am honestly surprised by which houses end up more expensive. This post will be a simple exploratory data analysis and initial modeling of house prices. This type of raw, initial look is inspired by the weekly <em>tidy tuesday</em> screencasts from <a href="https://www.youtube.com/channel/UCTTBgWyJl2HrrhQOOc710kA">Julia Silge</a> and <a href="https://www.youtube.com/user/safe4democracy">David Robinson</a> from <code>Rstudio</code>. For anyone interested indeveloping their general workflow and abilities in the <code>tidyverse</code>, I would highly recommend tuning in to these weekly posts.</p>
 <p>The data were obtained from a <a href="https://www.kaggle.com/c/house-prices-advanced-regression-techniques/data">kaggle competition</a>. The <em>tidy tuesday</em> screencasts are done in <code>R</code> using the <code>tidyverse</code>. I have been working on my <code>python</code> skills, so I have repeated my analysis in python’s <code>pandas</code> as well.</p>
+<pre><code>## Warning in normalizePath(path.expand(path), winslash, mustWork): path[1]=&quot;C:
+## \Users\cason\anaconda3\envs\covid_update_env/python.exe&quot;: The system cannot find
+## the file specified</code></pre>
+<pre><code>## Warning: Python &#39;C:/Users/cason/anaconda3/python.exe&#39; was requested but &#39;C:/
+## Users/cason/AppData/Local/r-miniconda/envs/r-reticulate/python.exe&#39; was loaded
+## instead (see reticulate::py_config() for more information)</code></pre>
 <div id="loading-the-necessary-packages" class="section level5 tabset tabset-pills tabset-fade">
 <h5>Loading the Necessary Packages</h5>
 <div id="r" class="section level6">
@@ -386,8 +392,7 @@ library(scales)</code></pre>
 <pre class="python"><code>import pandas as pd
 import numpy as np
 import random
-import seaborn as sns
-import matplotlib.pyplot as plt</code></pre>
+#from plotnine import ggplot, aes, geom_point, geom_line</code></pre>
 </div>
 </div>
 <div id="reading-in-the-data" class="section level5 tabset tabset-pills tabset-fade">
@@ -466,29 +471,14 @@ grouped_prices_py = (train_py
   .melt(&quot;dateSold&quot;)
   .dropna(axis = 0))
 
-# fg = sns.FacetGrid(grouped_prices_py, col = &quot;OverallCond&quot;, hue = &quot;OverallCond&quot;, col_wrap = 3, height = 3, )
-# fg.map(sns.pointplot, &quot;dateSold&quot;, &quot;value&quot;, ci = &quot;None&quot;)
 
-#plt.plot(grouped_prices_py.dateSold, grouped_prices_py.value)
+#print(grouped_prices_py.head())
 
-print(grouped_prices_py)
-
-# fg = sns.FacetGrid(data=grouped_prices_py, hue=&#39;OverallCond&#39;, aspect=1.61)
-# fg.map(plt.scatter, &#39;dateSold&#39;, &#39;value&#39;).add_legend()</code></pre>
-<pre><code>##       dateSold OverallCond     value
-## 38  2009-03-01           1   61000.0
-## 59  2006-05-01           2   87000.0
-## 77  2007-11-01           2   67000.0
-## 100 2009-10-01           2   85000.0
-## 107 2010-05-01           2   76500.0
-## ..         ...         ...       ...
-## 481 2009-06-01           9  176000.0
-## 482 2009-07-01           9  138950.0
-## 486 2009-11-01           9  168000.0
-## 487 2009-12-01           9  222000.0
-## 492 2010-05-01           9  203250.0
-## 
-## [262 rows x 3 columns]</code></pre>
+#(ggplot(grouped_prices_py, aes(x = &quot;dateSold&quot;, y = &quot;value&quot;))
+#  + geom_point())</code></pre>
+<pre class="python"><code>fig, ax = plt.subplots( nrows=1, ncols=1 )
+ax.plot(grouped_prices_py.dateSold, grouped_prices_py.value)
+fig.savefig(&quot;price_by_time.png&quot;)</code></pre>
 </div>
 </div>
 
